@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/portaudio-go/portaudio"
 	"math"
 	"github.com/nsf/termbox-go"
+	"time"
 	)
 
 
@@ -14,35 +15,32 @@ func main() {
 	
 	
 	// Start portAudio stream. Appoint buffer data first.
-	t.Start()
 	
 	
-	t.Buff.Data = beep(220, 4000)	
 	
 	termbox.Init()
 	termbox.SetInputMode(termbox.InputMouse)
-	termbox.SetCell(1, 2, 'A', termbox.ColorDefault, termbox.ColorDefault)
-	termbox.Flush()
+	var x, velx int
+	t.Start()
 
-	go ui()
 	for {
-	
-	}
-}
-
-func ui () {
-loopy:
-	for {
-		switch ev := termbox.PollEvent(); ev.Type {
-			case termbox.EventKey:
-				if ev.Key == termbox.KeyEsc {
-					break loopy
-				}
+		termbox.SetCell(x, 2, 'A', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.Flush()
+		if x > 20 {
+			t.Buff.Data = beep(440, 4000)
+			velx = -1
+		}else if x < 3 {
+			t.Buff.Data = beep(880, 4000)
+			velx = 1
 		}
+		x += velx
+		time.Sleep(100* time.Millisecond)
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	}
-	termbox.Close()
+
 
 }
+
 
 func beep(freq, length int) (wave []int8) {
 	wave = make([]int8, length)
