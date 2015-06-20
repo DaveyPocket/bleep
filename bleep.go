@@ -20,23 +20,25 @@ func main() {
 	termbox.Init()
 	defer termbox.Close()
 	termbox.SetInputMode(termbox.InputMouse)
-	var x int
 	var fx float32
-	var velx float32
 	var x2, velx2 int
 	t.Start()
 	c := make(chan rune)
 	var temp rune
 	go ui(c)
+	objList := []Ball{}
+	objList = addBall(1, 15, 1, 0, objList)
+
+
 	for {
 		
-		if x >= 18 {
+		if objList[0].PosX >= 18 {
 			playBeep(&t.Buff, beep(110, 10000))
-			velx = -1
-		}else if x <= 0 {
+			objList[0].VX  = -1
+		}else if objList[0].PosX <= 0 {
 		playBeep(&t.Buff, beep(220, 10000))
 
-			velx = 1
+			objList[0].VX  = 1
 		}
 		if x2 >= 9 {
 			playBeep(&t.Buff, noise(4000))
@@ -45,16 +47,17 @@ func main() {
 			playBeep(&t.Buff, noise(4000))
 			velx2 = 1
 		}
-		fx += velx
-		x = int(fx)
+		fx += objList[0].VX
+		objList[0].PosX = int(fx)
 		x2 += velx2
-		termbox.SetCell(x, 2, 'A', termbox.ColorDefault, termbox.ColorDefault)
-		termbox.SetCell(x2, 3, 'B', termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(objList[0].PosX, 2, 9673, termbox.ColorGreen, termbox.ColorDefault)
+		termbox.SetCell(x2, 3, 9673, termbox.ColorRed, termbox.ColorDefault)
 		termbox.Flush()
 		time.Sleep(50* time.Millisecond)
 			select{
 			case j := <-c:
 				temp = j
+				
 			default:
 		}
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
@@ -134,8 +137,39 @@ func (t *thing) myCallback(_, out []int8) {
 	}
 }
 
+
+func addBall(x, y int, velx, vely float32, objList []Ball) []Ball{
+	return append(objList, Ball{x, y, velx, vely})
+}
+
 func (t *thing) Start() {
 	portaudio.Initialize()
 	t.S, _ = portaudio.OpenDefaultStream(0, 2, 44100, 40, t.myCallback)
 	t.S.Start()
+}
+
+type Ball struct {
+	PosX int
+	PosY int
+	VX float32
+	VY float32
+}
+
+type Wall struct {
+ 	Orientation string
+ 	PosX int
+ 	PosY int
+}
+
+func (w * Wall) Draw(){
+	x,y := termbox.Size()
+	if(w.Orientation == "vertical") {
+		for i := 0 ; i < y;i++ {
+			termbox.SetCell(w.PosX,i,'|',termbox.ColorWhite, termbox.ColorBlack)
+		}
+	}else if(w.Orientation == "horizontal") {
+		for i := 0; i < x; i++ {
+			termbox.SetCell(i,w.PosY,'_',termbox.ColorWhite, termbox.ColorBlack)
+		}
+	}
 }
