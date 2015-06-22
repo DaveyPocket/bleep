@@ -28,30 +28,32 @@ func main() {
 	go ui(c)
 	objList := []Ball{}
 	objList = addBall(1, 15, 1, 0, objList)
-
+	
+	w := Wall{"vertical", 19, 1}
 
 	for {
 		
 		if objList[0].PosX >= 18 {
-			playBeep(&t.Buff, beep(110, 10000))
+			playBeep(&t.Buff, beepPhase(110, 10000, 90) )
 			objList[0].VX  = -1
 		}else if objList[0].PosX <= 0 {
-		playBeep(&t.Buff, beep(220, 10000))
+		playBeep(&t.Buff, beepPhase(220, 10000, 90))
 
 			objList[0].VX  = 1
 		}
-		if x2 >= 9 {
+		if x2 >= 18 {
 			playBeep(&t.Buff, noise(4000))
-			velx2 = -1
+			velx2 = -2
 		}else if x2 <= 0 {
 			playBeep(&t.Buff, noise(4000))
-			velx2 = 1
+			velx2 = 2
 		}
 		fx += objList[0].VX
 		objList[0].PosX = int(fx)
 		x2 += velx2
 		termbox.SetCell(objList[0].PosX, 2, 9673, termbox.ColorGreen, termbox.ColorDefault)
 		termbox.SetCell(x2, 3, 9673, termbox.ColorRed, termbox.ColorDefault)
+		w.Draw()
 		termbox.Flush()
 		time.Sleep(50* time.Millisecond)
 			select{
@@ -98,6 +100,15 @@ func beep(freq, length int) (wave []int8) {
 	wave = make([]int8, length)
 	for n := 0; n < length; n++ {
 		wave[n] = int8((1 - float64(n)/float64(length))*   127*math.Sin(float64(2*math.Pi)*float64(freq*n)/44100))
+	}
+	return wave
+}
+
+func beepPhase(freq, length, deg int) (wave []int8) {
+	wave = make([]int8, length)
+	for n := 0; n < length; n++ {
+		wave[n] = int8((1 - float64(n)/float64(length))*   127*math.Sin(float64(math.Pi)*float64(deg)/float64(180) + float64(2*math.Pi)*float64(freq*n)/44100)) + int8((1 - float64(n)/float64(length))*   127*math.Sin(float64(2*math.Pi)*float64(freq*n)/44100))
+
 	}
 	return wave
 }

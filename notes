@@ -1,0 +1,6 @@
+Slice of pointers to balls (objects).
+Append a pointer to a ball to the list.
+Dynamically allocate a new ball and point the just appended Ball pointer to the newly allocated ball.
+Do not return anything from the function
+
+**First branch the repo
