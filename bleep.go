@@ -8,12 +8,10 @@ import (
 	"math/rand"
 	)
 
-
 func main() {
 	var t thing
 	t.Buff.Data = make([]int8, 40000)
 	t.Buff.Length = 40000
-	
 	
 	// Start portAudio stream. Appoint buffer data first.
 	
@@ -24,21 +22,19 @@ func main() {
 	var x2, velx2 int
 	t.Start()
 	c := make(chan rune)
-	var temp rune
 	go ui(c)
+	go gui(c)
 	objList := []Ball{}
 	objList = addBall(1, 15, 1, 0, objList)
 	
-	w := Wall{"vertical", 19, 1}
+	w := Wall{"vertical", 19, 1, 0}
 
 	for {
-		
 		if objList[0].PosX >= 18 {
-			playBeep(&t.Buff, beepPhase(110, 10000, 90) )
+			playBeep(&t.Buff, beepSquare(1000, 600, 0))
 			objList[0].VX  = -1
 		}else if objList[0].PosX <= 0 {
-		playBeep(&t.Buff, beepPhase(220, 10000, 90))
-
+			playBeep(&t.Buff, beepSquare(1000, 600, 0))
 			objList[0].VX  = 1
 		}
 		if x2 >= 18 {
@@ -56,20 +52,25 @@ func main() {
 		w.Draw()
 		termbox.Flush()
 		time.Sleep(50* time.Millisecond)
-			select{
-			case j := <-c:
-				temp = j
-				
-			default:
-		}
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-termbox.SetCell(1, 1, temp, termbox.ColorDefault, termbox.ColorDefault)
-
+		
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		
 	}
 
 
 }
 
+func gui(c chan rune) {
+	for {
+	select{
+		case j := <-c:
+			termbox.SetCell(1, 1, j, termbox.ColorDefault, termbox.ColorDefault)
+			termbox.Flush()
+		default:
+			termbox.SetCell(1, 1, 'd', termbox.ColorDefault, termbox.ColorDefault)
+	}
+	}
+}
 
 func ui(c chan rune) {
 	for {
@@ -107,8 +108,18 @@ func beep(freq, length int) (wave []int8) {
 func beepPhase(freq, length, deg int) (wave []int8) {
 	wave = make([]int8, length)
 	for n := 0; n < length; n++ {
-		wave[n] = int8((1 - float64(n)/float64(length))*   127*math.Sin(float64(math.Pi)*float64(deg)/float64(180) + float64(2*math.Pi)*float64(freq*n)/44100)) + int8((1 - float64(n)/float64(length))*   127*math.Sin(float64(2*math.Pi)*float64(freq*n)/44100))
+		wave[n] = int8((1 - float64(n)/float64(length))*63*math.Sin(float64(math.Pi)*float64(deg)/float64(180) + float64(2*math.Pi)*float64(freq*n)/44100)) + int8((1 - float64(n)/float64(length))*63*math.Sin(float64(2*math.Pi)*float64(freq*n)/44100))
 
+	}
+	return wave
+}
+
+func beepSquare(freq, length, duty int) (wave []int8) {
+	// Duty cycle in percent
+	wave = make([]int8, length)
+	for n := 0; n < length; n++ {
+		// Make separate envelope function?????!?!?!?!?11?1One!!
+		wave[n] = int8((1 - float64(n)/float64(length)) * 127 * float64((((8*n)/(freq)) % 2)) + float64(duty))
 	}
 	return wave
 }
@@ -148,7 +159,6 @@ func (t *thing) myCallback(_, out []int8) {
 	}
 }
 
-
 func addBall(x, y int, velx, vely float32, objList []Ball) []Ball{
 	return append(objList, Ball{x, y, velx, vely})
 }
@@ -160,27 +170,77 @@ func (t *thing) Start() {
 }
 
 type Ball struct {
-	PosX int
-	PosY int
-	VX float32
-	VY float32
+	PosX		int
+	PosY		int
+	VX			float32
+	VY			float32
+}
+
+
+
+
+func newBall(x, y int, vx, vy float32) (b Ball) {
+	b.PosX = x
+	b.PosY = y
+	b.VX = vx
+	b.VY = vy
+	return b
+}
+
+func newWall(x, y, length int, orientation string) (w Wall) {
+	w.Orientation = orientation
+	w.PosX = x
+	w.PosY = y
+	w.Size = length
+	return w
+}
+
+type objectSpace struct{
+	balls		[]Ball
+	walls		[]Wall
+}
+
+func (Space *objectSpace) draw() {
+	for _, w := range Space.walls {
+		w.Draw()
+	}
+	for _, b := range Space.balls {
+		b.Draw()
+	}
+}
+
+type object interface{
+	Draw()
+}
+
+func (Space *objectSpace) add (o interface{}) {
+	switch obj := o.(type) {
+		case Ball:
+			Space.balls = append(Space.balls, obj)
+		case Wall:
+			Space.walls = append(Space.walls, obj)
+	}
 }
 
 type Wall struct {
  	Orientation string
  	PosX int
  	PosY int
+	Size int
 }
 
 func (w * Wall) Draw(){
-	x,y := termbox.Size()
 	if(w.Orientation == "vertical") {
-		for i := 0 ; i < y;i++ {
-			termbox.SetCell(w.PosX,i,'|',termbox.ColorWhite, termbox.ColorBlack)
+		for i := 0 ; i < w.Size; i++ {
+			termbox.SetCell(w.PosX, i,' ', termbox.ColorWhite, termbox.ColorRed)
 		}
 	}else if(w.Orientation == "horizontal") {
-		for i := 0; i < x; i++ {
-			termbox.SetCell(i,w.PosY,'_',termbox.ColorWhite, termbox.ColorBlack)
+		for i := 0; i < w.Size; i++ {
+			termbox.SetCell(i, w.PosY, ' ', termbox.ColorWhite, termbox.ColorRed)
 		}
 	}
+}
+
+func (b *Ball) Draw() {
+	termbox.SetCell(b.PosX, b.PosY, 9673, termbox.ColorGreen, termbox.ColorDefault)
 }
