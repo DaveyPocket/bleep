@@ -12,9 +12,8 @@ func main() {
 	var t thing
 	t.Buff.Data = make([]int8, 40000)
 	t.Buff.Length = 40000
-	
 	// Start portAudio stream. Appoint buffer data first.
-	
+
 	termbox.Init()
 	defer termbox.Close()
 	termbox.SetInputMode(termbox.InputMouse)
@@ -26,7 +25,7 @@ func main() {
 	go gui(c)
 	objList := []Ball{}
 	objList = addBall(1, 15, 1, 0, objList)
-	
+
 	w := Wall{"vertical", 19, 1, 0}
 
 	for {
@@ -52,9 +51,9 @@ func main() {
 		w.Draw()
 		termbox.Flush()
 		time.Sleep(50* time.Millisecond)
-		
+
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		
+
 	}
 
 
@@ -94,7 +93,7 @@ func playBeep(in *ringBuff, wave []int8){
 		if tempIndex == in.Length{
 			tempIndex = 0
 		}
-	} 
+	}
 }
 
 func beep(freq, length int) (wave []int8) {
@@ -133,9 +132,9 @@ func noise(length int) (wave []int8) {
 	return wave
 }
 type ringBuff struct {
-	Data 	[]int8
+	Data		[]int8
 	Length	int
-	Index	int
+	Index		int
 }
 
 type thing struct {
@@ -195,9 +194,9 @@ func newWall(x, y, length int, orientation string) (w Wall) {
 	return w
 }
 
+// Can this be replaced by a signal slice of object interfaces??
 type objectSpace struct{
-	balls		[]Ball
-	walls		[]Wall
+	list		[]object
 }
 
 func (Space *objectSpace) draw() {
@@ -213,20 +212,22 @@ type object interface{
 	Draw()
 }
 
-func (Space *objectSpace) add (o interface{}) {
-	switch obj := o.(type) {
-		case Ball:
-			Space.balls = append(Space.balls, obj)
-		case Wall:
-			Space.walls = append(Space.walls, obj)
+func (Space *objectSpace) add (o ...object) {
+	for _, thing := range o {
+		switch obj := thing.(type) {
+			case *Ball:
+				Space.balls = append(Space.balls, *obj)
+			case *Wall:
+				Space.walls = append(Space.walls, *obj)
+		}
 	}
 }
 
 type Wall struct {
- 	Orientation string
- 	PosX int
- 	PosY int
-	Size int
+	Orientation		string
+	PosX				int
+	PosY				int
+	Size				int
 }
 
 func (w * Wall) Draw(){
